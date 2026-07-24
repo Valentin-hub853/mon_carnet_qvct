@@ -1,0 +1,104 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SRACTIVE — Statistiques</title>
+<style>
+body{margin:0;background:#F6F4EF;color:#173044;font-family:Inter,system-ui,Arial,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:30px 20px 60px}
+h1{font-family:Georgia,serif;font-size:26px;color:#315E84;margin:0 0 6px}
+p.sub{color:#6D7F8D;margin:0 0 24px}
+.gate{background:#fff;border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(44,81,110,.10)}
+input{width:100%;box-sizing:border-box;border:1px solid #D7E2E7;border-radius:11px;padding:12px;font-size:15px;margin:10px 0}
+button{border:0;border-radius:999px;background:#4678A3;color:#fff;padding:13px 22px;font-weight:800;cursor:pointer;font-size:14px}
+.card{background:#fff;border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 10px 30px rgba(44,81,110,.10)}
+.card h2{font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:#4678A3;margin:0 0 12px}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #E3E9EC;font-size:14px}
+.row:last-child{border-bottom:none}
+.row b{color:#173044}
+.big{font-size:40px;font-family:Georgia,serif;color:#315E84;font-weight:700}
+.err{color:#C95A4E;font-size:13px;margin-top:8px}
+.hidden{display:none}
+</style></head><body><div class="wrap">
+<h1>Statistiques SRACTIVE</h1>
+<p class="sub">Vue agrégée et anonyme de l'usage du carnet — aucune réponse individuelle n'est affichée ici.</p>
+
+<div class="gate" id="gate">
+  <label>Clé d'accès</label>
+  <input type="password" id="key" placeholder="Votre clé secrète">
+  <button onclick="load()">Afficher les statistiques</button>
+  <div class="err hidden" id="err"></div>
+</div>
+
+<div id="results" class="hidden"></div>
+
+<script>
+async function load(){
+  const key = document.getElementById('key').value.trim();
+  const errBox = document.getElementById('err');
+  errBox.classList.add('hidden');
+  if(!key){ return; }
+  try{
+    const res = await fetch('/api/v1/stats?key=' + encodeURIComponent(key));
+    const data = await res.json();
+    if(!data.ok){
+      errBox.textContent = data.error === 'unauthorized' ? 'Clé incorrecte.' : ('Erreur : ' + data.error);
+      errBox.classList.remove('hidden');
+      return;
+    }
+    render(data);
+  }catch(e){
+    errBox.textContent = 'Impossible de contacter le serveur.';
+    errBox.classList.remove('hidden');
+  }
+}
+
+function renderTable(title, obj){
+  const entries = Object.entries(obj || {});
+  if(!entries.length) return `<div class="card"><h2>${title}</h2><p style="color:#6D7F8D;font-size:13px;margin:0">Aucune donnée pour le moment.</p></div>`;
+  return `<div class="card"><h2>${title}</h2>${entries.map(([k,v])=>`<div class="row"><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
+}
+
+function render(data){
+  document.getElementById('gate').classList.add('hidden');
+  const results = document.getElementById('results');
+  results.classList.remove('hidden');
+  results.innerHTML = `
+    <div class="card">
+      <h2>Vue d'ensemble</h2>
+      <div class="row"><span>Sessions uniques (estimation)</span><b class="big" style="font-size:22px">${data.unique_sessions}</b></div>
+      <div class="row"><span>Événements enregistrés</span><b>${data.total_events}</b></div>
+      <div class="row"><span>Circuits sportifs lancés</span><b>${data.circuits_started}</b></div>
+    </div>
+    ${renderTable('Répartition par site client', data.by_site)}
+    ${renderTable('Écrans consultés', data.views)}
+    ${renderTable('Escales ouvertes', data.chapters_opened)}
+    ${renderTable('Escales terminées', data.chapters_completed)}
+    ${renderTable('Score moyen aux quiz (%)', data.quiz_average_percent)}
+    <div class="card">
+      <button onclick="resetStats()" style="background:#C95A4E">Réinitialiser les statistiques</button>
+      <p style="color:#6D7F8D;font-size:12px;margin:10px 0 0">Supprime définitivement tous les événements enregistrés. Utile pour repartir de zéro avant une vraie diffusion, après vos tests.</p>
+      <div class="err hidden" id="resetErr"></div>
+    </div>
+  `;
+}
+
+async function resetStats(){
+  if(!confirm('Cette action supprime définitivement toutes les statistiques enregistrées, sans possibilité de les récupérer. Continuer ?')) return;
+  const key = document.getElementById('key').value.trim();
+  const errBox = document.getElementById('resetErr');
+  errBox.classList.add('hidden');
+  try{
+    const res = await fetch('/api/v1/reset?key=' + encodeURIComponent(key), { method: 'POST' });
+    const data = await res.json();
+    if(!data.ok){
+      errBox.textContent = data.error === 'unauthorized' ? 'Clé incorrecte.' : ('Erreur : ' + data.error);
+      errBox.classList.remove('hidden');
+      return;
+    }
+    alert(data.deleted + ' événement(s) supprimé(s).');
+    load();
+  }catch(e){
+    errBox.textContent = 'Impossible de contacter le serveur.';
+    errBox.classList.remove('hidden');
+  }
+}
+</script>
+</div></body></html>
