@@ -10,5 +10,11 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "MVT_SOLUTIONS_CARNET",
+      "id": "b4a72ece960e4cfdb544c20eef4faf48"
+    }
   ]
 }
