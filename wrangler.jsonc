@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "mvt-solutions-carnet",
+  "name": "mvt-solutionscarnet",
   "compatibility_date": "2026-07-27",
   "observability": {
     "enabled": true
