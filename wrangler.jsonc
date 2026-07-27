@@ -13,7 +13,7 @@
   ],
   "kv_namespaces": [
     {
-      "binding": "MVT_SOLUTIONS_CARNET",
+    "binding": "SRACTIVE_EVENTS",
       "id": "b4a72ece960e4cfdb544c20eef4faf48"
     }
   ]
